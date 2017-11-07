@@ -7,12 +7,12 @@ import (
 )
 
 type Lock struct {
-	Host string
-	Uid  string
+	Owner string
 }
 
 type LockStore interface {
-	AcquireLock() (Lock, error)
+	AcquireLock(host string) (Lock, error)
+	GetLock() (Lock, error)
 	RenewLock() (Lock, error)
 	DeleteLock() error
 }

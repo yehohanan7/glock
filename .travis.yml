@@ -1,0 +1,19 @@
+sudo: required
+
+language: go
+
+services:
+  - docker
+
+env:
+  - DOCKER_BIND_LOCALHOST=true
+
+go:
+  - master
+
+install:
+  - go get github.com/FiloSottile/gvt
+  - gvt restore
+
+script:
+  - go test $(go list ./... | grep -v /vendor/)

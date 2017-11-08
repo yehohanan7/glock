@@ -60,4 +60,9 @@ func TestRenewLock(t *testing.T) {
 		fmt.Println(lock)
 		t.Error("should not renew lock acquired by different owner")
 	}
+
+	if err := store.Clear(); err != nil {
+		t.Error("error while clearing locks", err)
+	}
+
 }

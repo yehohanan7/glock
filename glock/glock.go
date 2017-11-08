@@ -17,7 +17,6 @@ type LockStore interface {
 	AcquireLock(owner string) (Lock, error)
 	GetLock() (Lock, error)
 	RenewLock(owner string) (Lock, error)
-	DeleteLock() error
 	Clear() error
 }
 

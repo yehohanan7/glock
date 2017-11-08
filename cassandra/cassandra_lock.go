@@ -52,10 +52,6 @@ func (store *CassandraLockStore) RenewLock(owner string) (Lock, error) {
 	return Lock{owner}, nil
 }
 
-func (store *CassandraLockStore) DeleteLock() error {
-	return nil
-}
-
 func (store *CassandraLockStore) Clear() error {
 	return store.session.Query(`truncate lock`).Exec()
 }

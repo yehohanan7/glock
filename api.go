@@ -11,13 +11,13 @@ import (
 type GlockConfig struct {
 	Owner    string
 	Ticker   *time.Ticker
-	Store    LockStore
+	Store    glock.LockStore
 	MasterCh chan struct{}
-	slaveCh  chan struct{}
+	SlaveCh  chan struct{}
 	StopCh   chan struct{}
 }
 
-func NewCassandraStore(session *gocql.Session) LockStore {
+func NewCassandraStore(session *gocql.Session) glock.LockStore {
 	return cassandra.NewStore(session)
 }
 

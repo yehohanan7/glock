@@ -1,20 +1,24 @@
 package glock
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang/glog"
 )
+
+var LockOwnershipLost = errors.New("lock is owned by other owner")
 
 type Lock struct {
 	Owner string
 }
 
 type LockStore interface {
-	AcquireLock(host string) (Lock, error)
+	AcquireLock(owner string) (Lock, error)
 	GetLock() (Lock, error)
-	RenewLock() (Lock, error)
+	RenewLock(owner string) (Lock, error)
 	DeleteLock() error
+	Clear() error
 }
 
 func Start(host string, ticker *time.Ticker, lockStore LockStore, master, slave, stop chan struct{}) error {

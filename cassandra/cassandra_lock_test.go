@@ -1,28 +1,14 @@
 package cassandra
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/gocql/gocql"
 	"github.com/yehohanan7/glock/glock"
 )
 
-var store glock.LockStore
-
-func init() {
-	cluster := gocql.NewCluster("localhost")
-	cluster.Keyspace = "test"
-	cluster.Consistency = gocql.Quorum
-	session, err := cluster.CreateSession()
-	if err != nil {
-		panic(err)
-	}
-	session.Query(`CREATE KEYSPACE test WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', 'CHX' : 3 };`).Exec()
-	session.Query(`CREATE TABLE test.lock (id text, owner text, PRIMARY KEY (id)) WITH default_time_to_live = 10;`).Exec()
-	store = NewStore(session)
-}
-
-func TestAcquireLock(t *testing.T) {
+func TestAcquireNewLock(t *testing.T) {
+	store := NewStore(session)
 	acquiredLock, err := store.AcquireLock("some-host")
 
 	if err != nil {
@@ -39,4 +25,39 @@ func TestAcquireLock(t *testing.T) {
 		t.Errorf("expected owner %v, got %v", acquiredLock.Owner, lock.Owner)
 	}
 
+	if err := store.Clear(); err != nil {
+		t.Error("error while clearing locks", err)
+	}
+}
+
+func TestAcquireExistingLock(t *testing.T) {
+	store := NewStore(session)
+	_, err := store.AcquireLock("some-host")
+	if err != nil {
+		t.Error("should acquire a new lock", err)
+	}
+
+	if _, err := store.AcquireLock("some-host"); err != glock.LockOwnershipLost {
+		t.Error("should not acquire new lock when the lock exists", err)
+	}
+
+	if err := store.Clear(); err != nil {
+		t.Error("error while clearing locks", err)
+	}
+
+}
+
+func TestRenewLock(t *testing.T) {
+	owner := "ahost"
+	store := NewStore(session)
+	store.AcquireLock(owner)
+
+	if lock, err := store.RenewLock(owner); err != nil || lock.Owner != owner {
+		t.Errorf("should renew lock:%v, err: %v", lock, err)
+	}
+
+	if lock, err := store.RenewLock("different-host"); err == nil || lock.Owner != "" {
+		fmt.Println(lock)
+		t.Error("should not renew lock acquired by different owner")
+	}
 }

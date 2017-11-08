@@ -5,11 +5,12 @@ import (
 	"strconv"
 
 	"github.com/gocql/gocql"
-	"github.com/golang/glog"
 	. "github.com/yehohanan7/glock/glock"
 )
 
-const LockId string = "glock"
+const (
+	LockId = "glock"
+)
 
 type CassandraLockStore struct {
 	session *gocql.Session
@@ -26,19 +27,37 @@ func (store *CassandraLockStore) GetLock() (Lock, error) {
 }
 
 func (store *CassandraLockStore) AcquireLock(owner string) (Lock, error) {
-	if err := store.session.Query(`insert into lock values (?, ?)`, LockId, owner).Exec(); err != nil {
-		glog.Errorf("error while acquiring lock", err)
-		return Lock{}, nil
+	applied, err := store.session.Query(`insert into lock (id, owner) values(?, ?) if not exists`, LockId, owner).ScanCAS(nil, nil)
+	if err != nil {
+		return Lock{}, err
 	}
+
+	if !applied {
+		return Lock{}, LockOwnershipLost
+	}
+
 	return Lock{owner}, nil
 }
 
-func (store *CassandraLockStore) RenewLock() (Lock, error) {
-	return Lock{}, nil
+func (store *CassandraLockStore) RenewLock(owner string) (Lock, error) {
+	applied, err := store.session.Query(`update lock set owner = ? where id = ? if owner = ?`, owner, LockId, owner).ScanCAS(nil)
+	if err != nil {
+		return Lock{}, err
+	}
+
+	if !applied {
+		return Lock{}, LockOwnershipLost
+	}
+
+	return Lock{owner}, nil
 }
 
 func (store *CassandraLockStore) DeleteLock() error {
 	return nil
+}
+
+func (store *CassandraLockStore) Clear() error {
+	return store.session.Query(`truncate lock`).Exec()
 }
 
 func NewStore(session *gocql.Session) LockStore {

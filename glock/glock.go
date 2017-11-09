@@ -20,8 +20,9 @@ type LockStore interface {
 	Clear() error
 }
 
-func retainOwnership(owner string, store LockStore) error {
+func retainOwnership(owner string, slave chan struct{}, store LockStore) error {
 	if _, err := store.RenewLock(owner); err != nil {
+		slave <- struct{}{}
 		return err
 	}
 	return nil
@@ -31,14 +32,16 @@ func Start(owner string, ticker *time.Ticker, store LockStore, master, slave, st
 	for {
 		select {
 		case <-ticker.C:
-			if lock, err := store.GetLock(); lock.Owner == owner && err == nil {
-				retainOwnership(owner, store)
+
+			lock, err := store.AcquireLock(owner)
+			if err != nil && lock.Owner == owner {
+				master <- struct{}{}
+				retainOwnership(owner, slave, store)
 				continue
 			}
 
-			if lock, err := store.AcquireLock(owner); err != nil && lock.Owner == owner {
-				master <- struct{}{}
-				retainOwnership(owner, store)
+			if lock, err := store.GetLock(); lock.Owner == owner && err == nil {
+				retainOwnership(owner, slave, store)
 				continue
 			}
 

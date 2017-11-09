@@ -20,7 +20,7 @@ func setupCassandra() {
 	if err := sess.Query(`CREATE KEYSPACE test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor': 1};`).Exec(); err != nil {
 		panic(err)
 	}
-	if err := sess.Query(`CREATE TABLE test.lock (id text, owner text, PRIMARY KEY (id)) WITH default_time_to_live = 10;`).Exec(); err != nil {
+	if err := sess.Query(`CREATE TABLE test.lock (id text, owner text, PRIMARY KEY (id)) WITH default_time_to_live = 5;`).Exec(); err != nil {
 		panic(err)
 	}
 

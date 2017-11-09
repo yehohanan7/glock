@@ -64,5 +64,19 @@ func TestRenewLock(t *testing.T) {
 	if err := store.Clear(); err != nil {
 		t.Error("error while clearing locks", err)
 	}
+}
 
+func TestClearLocks(t *testing.T) {
+	store := NewStore(session)
+	if _, err := store.AcquireLock("host1"); err != nil {
+		t.Error("lock not acquired")
+	}
+
+	if err := store.Clear(); err != nil {
+		t.Error("locks not cleared", err)
+	}
+
+	if lock, _ := store.GetLock(); lock.Owner != "" {
+		t.Error("locks not cleared: ", lock.Owner)
+	}
 }

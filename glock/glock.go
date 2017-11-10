@@ -37,6 +37,7 @@ func Start(owner string, ticker *time.Ticker, store LockStore, notify chan strin
 	states := make(chan string)
 	go notifyChange(states, notify)
 
+	glog.Info("starting process...")
 	for {
 		select {
 		case <-ticker.C:

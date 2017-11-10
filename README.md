@@ -5,15 +5,13 @@
 Glock is used to achieve consensus between different hosts using various persistent stores.
 
 
-### Cassandra
+### Glock with Cassandra
 The cassandra implementation is based on the article here: https://www.datastax.com/dev/blog/consensus-on-cassandra
-
 #### Setup
 ```bash
 CREATE KEYSPACE test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor': 1};
 CREATE TABLE test.lock (id text, owner text, PRIMARY KEY (id)) WITH default_time_to_live = 5;
 ```
-
 #### Glock example
 ```go
 	import "github.com/yehohanan7/glock/glock"

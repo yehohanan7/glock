@@ -20,32 +20,36 @@ type LockStore interface {
 	Clear() error
 }
 
-func retainOwnership(owner string, slave chan struct{}, store LockStore) error {
-	if _, err := store.RenewLock(owner); err != nil {
-		slave <- struct{}{}
-		return err
+func notifyChange(states chan string, master, slave chan struct{}) {
+	var currentState = "slave"
+
+	for state := range states {
+		if state != currentState && state == "master" {
+			master <- struct{}{}
+		}
+		if state != currentState && state == "slave" {
+			slave <- struct{}{}
+		}
+		currentState = state
 	}
-	return nil
 }
 
 func Start(owner string, ticker *time.Ticker, store LockStore, master, slave, stop chan struct{}) error {
+	states := make(chan string)
+	go notifyChange(states, master, slave)
+
 	for {
 		select {
 		case <-ticker.C:
-
-			lock, err := store.AcquireLock(owner)
-			if err != nil && lock.Owner == owner {
-				master <- struct{}{}
-				retainOwnership(owner, slave, store)
-				continue
+			if _, err := store.AcquireLock(owner); err == nil {
+				if _, err := store.RenewLock(owner); err == nil {
+					states <- "master"
+				} else {
+					states <- "slave"
+				}
+			} else {
+				states <- "slave"
 			}
-
-			if lock, err := store.GetLock(); lock.Owner == owner && err == nil {
-				retainOwnership(owner, slave, store)
-				continue
-			}
-
-			slave <- struct{}{}
 		case <-stop:
 			glog.Info("stoping election...")
 			return nil

@@ -27,4 +27,5 @@ func TestGlock(t *testing.T) {
 	if err := store.Clear(); err != nil {
 		t.Error("error while clearing locks", err)
 	}
+
 }

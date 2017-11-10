@@ -27,16 +27,17 @@ func (store *CassandraLockStore) GetLock() (Lock, error) {
 }
 
 func (store *CassandraLockStore) AcquireLock(owner string) (Lock, error) {
-	applied, err := store.session.Query(`insert into lock (id, owner) values(?, ?) if not exists`, LockId, owner).ScanCAS(nil, nil)
+	var existingOwner string
+	applied, err := store.session.Query(`insert into lock (id, owner) values(?, ?) if not exists`, LockId, owner).ScanCAS(nil, &existingOwner)
 	if err != nil {
 		return Lock{}, err
 	}
 
-	if !applied {
-		return Lock{}, LockOwnershipLost
-	}
+	if applied || owner == existingOwner {
+		return Lock{owner}, nil
 
-	return Lock{owner}, nil
+	}
+	return Lock{}, LockOwnershipLost
 }
 
 func (store *CassandraLockStore) RenewLock(owner string) (Lock, error) {

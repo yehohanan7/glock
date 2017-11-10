@@ -3,8 +3,6 @@ package cassandra
 import (
 	"fmt"
 	"testing"
-
-	"github.com/yehohanan7/glock/glock"
 )
 
 func TestAcquireNewLock(t *testing.T) {
@@ -31,14 +29,19 @@ func TestAcquireNewLock(t *testing.T) {
 }
 
 func TestAcquireExistingLock(t *testing.T) {
+	owner := "some-owner"
 	store := NewStore(session)
-	_, err := store.AcquireLock("some-host")
+	_, err := store.AcquireLock(owner)
 	if err != nil {
 		t.Error("should acquire a new lock", err)
 	}
 
-	if _, err := store.AcquireLock("some-host"); err != glock.LockOwnershipLost {
-		t.Error("should not acquire new lock when the lock exists", err)
+	if _, err := store.AcquireLock(owner); err != nil {
+		t.Error("should acquire new lock when the lock held by the same owner", err)
+	}
+
+	if _, err := store.AcquireLock("different-owner"); err == nil {
+		t.Error("should not acquire lock held by a different owner", err)
 	}
 
 	if err := store.Clear(); err != nil {

@@ -1,3 +1,5 @@
 .cover/
 vendor/**
 !vendor/manifest
+.idea
+*.iml

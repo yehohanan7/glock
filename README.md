@@ -2,7 +2,7 @@
 
 
 ## Introduction
-Glock is used to achieve consensus between different hosts using various persistent stores.
+Glock is used to achieve consensus between different hosts using a persistent stores.
 
 
 ### Glock with Cassandra

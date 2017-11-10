@@ -14,30 +14,29 @@ CREATE TABLE test.lock (id text, owner text, PRIMARY KEY (id)) WITH default_time
 ```
 #### Glock example
 ```go
-	import "github.com/yehohanan7/glock/glock"
-  session := //initialize a cassandra session using gocql
+import "github.com/yehohanan7/glock/glock"
+session := //initialize a cassandra session using gocql
 
-	config := glock.Config{
-		"host1",
-		time.NewTicker(2 * time.Second),
-		glock.NewCassandraStore(session),
-		notifyCh,
-		stopCh,
-	}
+config := glock.Config{
+	"host1",
+	time.NewTicker(2 * time.Second),
+	glock.NewCassandraStore(session),
+	notifyCh,
+	stopCh,
+}
 
-	go glock.Start(config)
+go glock.Start(config)
 
-	for {
-		select {
-		case state := <-notifyCh:
-			if state == "master" {
-				fmt.Println("became master")
-			}
-
-			if state == "slave" {
-				fmt.Println("became slave")
-			}
+for {
+	select {
+	case state := <-notifyCh:
+		if state == "master" {
+			fmt.Println("became master")
+		}
+		if state == "slave" {
+			fmt.Println("became slave")
 		}
 	}
+}
 ```
 

@@ -8,7 +8,7 @@ import (
 	"github.com/yehohanan7/glock/glock"
 )
 
-type GlockConfig struct {
+type Config struct {
 	Owner    string
 	Ticker   *time.Ticker
 	Store    glock.LockStore
@@ -20,6 +20,6 @@ func NewCassandraStore(session *gocql.Session) glock.LockStore {
 	return cassandra.NewStore(session)
 }
 
-func StartGlock(config GlockConfig) {
+func Start(config Config) {
 	glock.Start(config.Owner, config.Ticker, config.Store, config.NotifyCh, config.StopCh)
 }

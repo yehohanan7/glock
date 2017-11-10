@@ -12,8 +12,7 @@ type GlockConfig struct {
 	Owner    string
 	Ticker   *time.Ticker
 	Store    glock.LockStore
-	MasterCh chan struct{}
-	SlaveCh  chan struct{}
+	NotifyCh chan string
 	StopCh   chan struct{}
 }
 
@@ -22,5 +21,5 @@ func NewCassandraStore(session *gocql.Session) glock.LockStore {
 }
 
 func StartGlock(config GlockConfig) {
-	glock.Start(config.Owner, config.Ticker, config.Store, config.MasterCh, config.SlaveCh, config.StopCh)
+	glock.Start(config.Owner, config.Ticker, config.Store, config.NotifyCh, config.StopCh)
 }

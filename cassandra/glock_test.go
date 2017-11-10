@@ -1,7 +1,6 @@
 package cassandra
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -10,32 +9,33 @@ import (
 
 func TestGlock(t *testing.T) {
 	store := NewStore(session)
-	masterCh1, slaveCh1, stopCh1 := make(chan struct{}), make(chan struct{}), make(chan struct{})
-	go glock.Start("node1", time.NewTicker(1*time.Second), store, masterCh1, slaveCh1, stopCh1)
-	shouldRecieveMessage(masterCh1, slaveCh1, "expected to become master", t)
+	states1, stopCh1 := make(chan string), make(chan struct{})
+	go glock.Start("node1", time.NewTicker(1*time.Second), store, states1, stopCh1)
+	shouldRecieveMessage(states1, "master", "expected to become master", t)
 
-	masterCh2, slaveCh2, stopCh2 := make(chan struct{}), make(chan struct{}), make(chan struct{})
-	go glock.Start("node2", time.NewTicker(1*time.Second), store, masterCh2, slaveCh2, stopCh2)
-	shouldRecieveMessage(slaveCh2, masterCh1, "expected to become slave", t)
-
-	fmt.Println("clearing...")
+	states2, stopCh2 := make(chan string), make(chan struct{})
+	go glock.Start("node2", time.NewTicker(1*time.Second), store, states2, stopCh2)
+	shouldRecieveMessage(states2, "slave", "expected to become slave", t)
 	stopCh1 <- struct{}{}
-	stopCh2 <- struct{}{}
 
+	shouldRecieveMessage(states2, "master", "expected to become slave", t)
+
+	stopCh2 <- struct{}{}
 	if err := store.Clear(); err != nil {
 		t.Error("error while clearing locks", err)
 	}
 }
 
-func shouldRecieveMessage(ch, drain chan struct{}, message string, t *testing.T) {
+func shouldRecieveMessage(ch chan string, expected, errorMsg string, t *testing.T) {
 	for {
 		select {
-		case <-ch:
+		case msg := <-ch:
+			if msg != expected {
+				continue
+			}
 			return
-		case <-drain:
-			continue
 		case <-time.After(10 * time.Second):
-			t.Error(message)
+			t.Error(errorMsg)
 			return
 		}
 	}

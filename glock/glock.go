@@ -20,24 +20,22 @@ type LockStore interface {
 	Clear() error
 }
 
-func notifyChange(states chan string, master, slave chan struct{}) {
-	var currentState = "slave"
-	slave <- struct{}{}
-
+func notifyChange(states chan string, notifyCh chan string) {
+	var currentState = ""
 	for state := range states {
 		if state != currentState && state == "master" {
-			master <- struct{}{}
+			notifyCh <- state
 		}
 		if state != currentState && state == "slave" {
-			slave <- struct{}{}
+			notifyCh <- state
 		}
 		currentState = state
 	}
 }
 
-func Start(owner string, ticker *time.Ticker, store LockStore, master, slave, stop chan struct{}) error {
+func Start(owner string, ticker *time.Ticker, store LockStore, notify chan string, stop chan struct{}) error {
 	states := make(chan string)
-	go notifyChange(states, master, slave)
+	go notifyChange(states, notify)
 
 	for {
 		select {

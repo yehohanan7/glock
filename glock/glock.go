@@ -22,6 +22,7 @@ type LockStore interface {
 
 func notifyChange(states chan string, master, slave chan struct{}) {
 	var currentState = "slave"
+	slave <- struct{}{}
 
 	for state := range states {
 		if state != currentState && state == "master" {
@@ -51,6 +52,7 @@ func Start(owner string, ticker *time.Ticker, store LockStore, master, slave, st
 				states <- "slave"
 			}
 		case <-stop:
+			close(states)
 			glog.Info("stoping election...")
 			return nil
 		}
